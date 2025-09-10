@@ -1,0 +1,188 @@
+<html>
+    <head>
+    </head>
+    <body>
+<canvas id="c"></canvas>
+<script src="spider.js"></script>
+<script>
+    let c = document.getElementById('c');
+    c.width = window.innerWidth-50;
+    c.height = window.innerHeight-50;
+    let ctx = c.getContext('2d');
+
+    let spider = new Spider(300,300);
+
+    let timer = 1;
+    let idleTimer = 0;
+    let target = {x: 10, y:10};
+    let currentTarget = {x:target.x, y:target.y};
+
+    let progress = [];
+    let oldTargets = [];
+    let shouldReach = [];
+    spider.targets.forEach(t => {
+      shouldReach.push(true);
+      progress.push(0)
+      oldTargets.push({x:t.x, y:t.y});
+    });
+
+    //let dists = getDistancesBetweenPoints(lols);
+/*    addEventListener("mousemove", (e) => {
+        target.x = e.clientX;
+        target.y = 400;//e.clientY;
+      spider.targets[0].x = target.x-50;
+      spider.targets[0].y = target.y;
+
+      spider.targets[1].x = target.x;
+      spider.targets[1].y = target.y;
+
+      spider.targets[2].x = target.x+50;
+      spider.targets[2].y = target.y;
+    })
+    */
+
+
+    let keysDown = new Set();
+    let pressKey = (key) => {
+        keysDown.add(key);
+    }
+    let releaseKey = (key) => {
+        keysDown.delete(key);
+    };
+
+    addEventListener("keydown", (e) => {
+        pressKey(e.key);
+    }, false);
+
+    addEventListener("keyup", (e) => {
+        releaseKey(e.key);
+    }, false)
+
+
+    let gameLoop = () => {
+      //timer--;
+      idleTimer+=0.1;
+      if(idleTimer>2*Math.PI) {
+        idleTimer =0;
+      }
+      if(timer === 0) {
+        if(keysDown.has("ArrowRight")) {
+          keysDown.delete("ArrowRight");
+          keysDown.add("ArrowLeft");
+        } else if (keysDown.has("ArrowLeft")){
+          keysDown.delete("ArrowLeft");
+          keysDown.add("ArrowRight");
+        } else {
+          keysDown.add("ArrowRight");
+
+        }
+        timer = 100;
+      }
+
+      if(keysDown.has("ArrowLeft")) {
+        spider.moveBody(spider.body.x-3, spider.body.y);
+      }
+      if(keysDown.has("ArrowRight")) {
+        spider.moveBody(spider.body.x+3, spider.body.y);
+      }
+      if(keysDown.has("ArrowUp")) {
+        spider.moveBody(spider.body.x, spider.body.y-2);
+      }
+      if(keysDown.has("ArrowDown")){
+        spider.moveBody(spider.body.x, spider.body.y+2);
+      }
+
+ /*     if(distance(currentTarget, target) > 4) {
+        currentTarget.x = lerp(currentTarget.x, target.x, easeOutQuad(progress));
+        currentTarget.y = lerp(currentTarget.y, target.y, easeOutQuad(progress));
+        progress = progress >= 1 ? 1 : progress+0.01;
+      } else {
+        progress = 0;
+      }
+*/
+
+      if(keysDown.keys.length == 0 && shouldReach.some(sr => sr == true) == false) {
+        
+        spider.moveBody(spider.body.x, spider.body.y+Math.sin(idleTimer)*0.5);
+      }
+      //updateTargets(spider.targets, spider.body);
+      let newTargets = getNewTargets(spider.targets, spider.body);
+      
+
+
+      for(let i = 0; i < spider.targets.length; i++) {
+        if(distance(spider.targets[i], newTargets[i]) > 30 && Math.random() > 0.6 && shouldReach.filter(i => !i).length >= 2) {
+          shouldReach[i] = true;
+        }
+        if(shouldReach[i]) {
+          //spider.targets[i].x = lerp(spider.targets[i].x, newTargets[i].x, easeOutQuad(progress[i]));
+          spider.targets[i].x = bezier(progress[i], oldTargets[i].x,newTargets[i].x, newTargets[i].x);
+          spider.targets[i].y = bezier(progress[i], oldTargets[i].y,newTargets[i].y-60, newTargets[i].y);
+
+          progress[i] = progress[i] >= 1 ? 1 : progress[i]+0.08;
+
+          if(distance(spider.targets[i], newTargets[i]) < 2) {
+            oldTargets[i] = {x:spider.targets[i].x, y:spider.targets[i].y};
+      
+            progress[i] = 0;
+            shouldReach[i] = false;
+          }
+        }
+
+
+      }
+      //fabrik(lols, dists, currentTarget) 
+
+      for(let i = 0; i < spider.arms.length; i++) {
+        fabrik(spider.arms[i], spider.distances[i], spider.targets[i]);
+      }
+
+
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0,0,c.width, c.height);
+      ctx.fillStyle = "#aaa";
+      ctx.fillRect(0,400,1000,50);
+      ctx.fillRect(currentTarget.x, currentTarget.y, 5,5);
+      ctx.fillRect(spider.body.x, spider.body.y, 5,5);
+
+      spider.arms.forEach(arm => {
+        ctx.beginPath();
+        arm.forEach(joint => {
+          ctx.lineTo(joint.x, joint.y);
+        });
+        ctx.stroke();
+      });
+      newTargets.forEach((nt, i) => {
+      ctx.fillStyle = "#0f0"
+        ctx.fillRect(nt.x,nt.y, 5,5)
+        ctx.fillStyle = "#000";
+        ctx.fillText("new " + i, nt.x,nt.y);
+      });
+
+      oldTargets.forEach((nt, i) => {
+      ctx.fillStyle = "#0f0"
+        ctx.fillRect(nt.x,nt.y, 5,5)
+        ctx.fillStyle = "#000";
+        ctx.fillText("old " + i, nt.x,nt.y);
+      });
+      ctx.fillStyle = "#00f"
+      spider.targets.forEach(nt => ctx.fillRect(nt.x,nt.y, 5,5));
+      /*ctx.beginPath();
+      lols.forEach(l => {
+        ctx.lineTo(l.x,l.y);
+        ctx.fillRect(l.x,l.y,4,4)});
+      ctx.stroke();
+      ctx.beginPath();
+      lols2.forEach(l => {
+        ctx.lineTo(l.x,l.y);
+        ctx.fillRect(l.x,l.y,4,4)});
+      ctx.stroke();*/
+      setTimeout(gameLoop, 20);
+    }
+
+    gameLoop();
+
+    </script>
+    </body>
+</html>
+
