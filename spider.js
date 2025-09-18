@@ -1,4 +1,6 @@
 // https://www.researchgate.net/publication/220632147_FABRIK_A_fast_iterative_solver_for_the_Inverse_Kinematics_problem
+// https://www.youtube.com/watch?v=UNoX65PRehA&t=944s
+// https://github.com/lo-th/fullik/blob/gh-pages/src/core/Joint2D.js
 
 let armLength = 50;
 
@@ -124,15 +126,6 @@ let updateTargets = (targets, origin) => {
   });
 }
 
-/*
- 
-0 1 2 3 4
-
-
--1 -0.5 0 0.5 1
-
-
- */
 let getNewTargets = (targets, origin) => {
   // TODO allocate right away
   let newTargets = [];
